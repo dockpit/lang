@@ -26,4 +26,17 @@ func TestParseNotes(t *testing.T) {
 	assert.Equal(t, "/notes/note-:note_id-:author_id", cd.Resources[3].Pattern)
 	assert.Equal(t, 0, len(cd.Resources[4].Cases))
 
+	//assert when parsing
+	assert.Equal(t, "GET", cd.Resources[0].Cases[1].When.Method)
+	assert.Equal(t, "/notes", cd.Resources[0].Cases[1].When.Path)
+	assert.Equal(t, "en", cd.Resources[0].Cases[1].When.Headers.Get("Accept-Language"))
+	assert.Equal(t, "en", cd.Resources[0].Cases[1].When.Headers.Get("accept-language"))
+	assert.Equal(t, []byte(`[{}, {}]`), cd.Resources[0].Cases[1].When.Body)
+
+	//assert then parsing
+	assert.Equal(t, 200, cd.Resources[0].Cases[1].Then.StatusCode)
+	assert.Equal(t, "OK", cd.Resources[0].Cases[1].Then.Status)
+	assert.Equal(t, "text/html", cd.Resources[0].Cases[1].Then.Headers.Get("Content-Type"))
+	assert.Equal(t, []byte(`<html></html>`), cd.Resources[0].Cases[1].Then.Body)
+
 }

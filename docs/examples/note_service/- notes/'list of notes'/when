@@ -1,0 +1,5 @@
+GET /notes
+Accept-Language: en
+Content-Type: application/json
+
+[{}, {}]
