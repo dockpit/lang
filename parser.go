@@ -21,7 +21,7 @@ var VariableEX = regexp.MustCompile(`(\(.*?\))`)
 var ValidHTTPMethods = []string{"GET", "POST", "PUT"} //@todo add more
 
 func UnexpectedDirError(fi os.FileInfo) error {
-	return fmt.Errorf("Parser encountered an unexpected directory: %s", fi.Name())
+	return fmt.Errorf("Parser encountered an unexpected directory: %s, expected a resource directory (starting with `- `), or a case directory formatted as `'case name'`", fi.Name())
 }
 
 func UnexpectedFileError(fi os.FileInfo) error {
@@ -323,7 +323,6 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
 			//use node structure to create and append resource to contract
 			p.currentResource = &contract.ResourceData{
-				Name:    part, //@todo find something better for parsing a unique name
 				Pattern: p.currentNode.Pattern,
 				Cases:   []*contract.CaseData{},
 			}
@@ -346,7 +345,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
 			//create the case from available data
 			p.currentCase = &contract.CaseData{
-			//@todo default case here?
+				Name: cname,
 			}
 
 			//and append to resource

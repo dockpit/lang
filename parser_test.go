@@ -25,6 +25,7 @@ func TestParseNotes(t *testing.T) {
 	assert.Equal(t, 0, len(cd.Resources[3].Cases))
 	assert.Equal(t, "/notes/note-:note_id-:author_id", cd.Resources[3].Pattern)
 	assert.Equal(t, 0, len(cd.Resources[4].Cases))
+	assert.Equal(t, "list of notes", cd.Resources[0].Cases[1].Name)
 
 	//assert when parsing
 	assert.Equal(t, "GET", cd.Resources[0].Cases[1].When.Method)
