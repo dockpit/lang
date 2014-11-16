@@ -76,8 +76,10 @@ func (n *Node) Append(nn *Node, part string) {
 type Parser struct {
 	Dir string
 
-	data            *contract.ContractData
-	nodes           map[string]*Node
+	data  *contract.ContractData
+	nodes map[string]*Node
+	cases map[string]string
+
 	currentNode     *Node
 	currentResource *contract.ResourceData
 	currentCase     *contract.CaseData
@@ -89,6 +91,16 @@ func NewParser(dir string) *Parser {
 	}
 	p.reset()
 	return p
+}
+
+func (p *Parser) reset() {
+	root := NewNode()
+	p.data = &contract.ContractData{}
+	p.nodes = map[string]*Node{".": root}
+	p.cases = map[string]string{}
+	p.currentNode = root
+	p.currentResource = nil
+	p.currentCase = nil
 }
 
 func (p *Parser) ParseHTTPMessage(r io.ReadCloser, fpath string) (string, http.Header, string, error) {
@@ -232,13 +244,6 @@ func (p *Parser) ToCaseName(basename string) string {
 	return m[1]
 }
 
-func (p *Parser) reset() {
-	root := NewNode()
-	p.data = &contract.ContractData{}
-	p.nodes = map[string]*Node{".": root}
-	p.currentNode = root
-}
-
 func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
 	//skip root
@@ -293,6 +298,11 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 				return fmt.Errorf("Case folder '%s' (%s) is outside a resource", cname, fpath)
 			}
 
+			//case name must be unique
+			if ex, ok := p.cases[cname]; ok {
+				return fmt.Errorf("Case with name '%s' (%s) already exists in '%s'", cname, fpath, filepath.Dir(ex))
+			}
+
 			//create the case from available data
 			p.currentCase = &contract.CaseData{
 			//@todo default case here?
@@ -300,6 +310,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
 			//and append to resource
 			res.Cases = append(res.Cases, p.currentCase)
+			p.cases[cname] = fpath
 		} else {
 			return UnexpectedDirError(fi)
 		}
@@ -337,7 +348,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 			} else if filepath.Base(fpath) == "while" {
 
 				//@todo implement
-				return fmt.Errorf("'while' parsing is not yet implemented")
+				// return fmt.Errorf("'while' parsing is not yet implemented")
 
 			} else {
 				return UnexpectedFileError(fi)
