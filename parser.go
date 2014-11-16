@@ -91,12 +91,12 @@ func NewParser(dir string) *Parser {
 	return p
 }
 
-func (p *Parser) ParseHTTPMessage(r io.ReadCloser, fpath string) (string, http.Header, []byte, error) {
+func (p *Parser) ParseHTTPMessage(r io.ReadCloser, fpath string) (string, http.Header, string, error) {
 
 	inbody := false
 	rline := ""
 	hlines := []string{}
-	body := []byte{}
+	body := ""
 	headers := make(http.Header)
 
 	s := bufio.NewScanner(r)
@@ -118,7 +118,7 @@ func (p *Parser) ParseHTTPMessage(r io.ReadCloser, fpath string) (string, http.H
 			hlines = append(hlines, s.Text())
 		} else {
 			//res is assumed to be body
-			body = append(body, s.Bytes()...)
+			body += s.Text()
 		}
 	}
 
@@ -137,9 +137,7 @@ func (p *Parser) ParseHTTPMessage(r io.ReadCloser, fpath string) (string, http.H
 
 // parses a when file loosely based on the http request spec
 func (p *Parser) ParseWhen(r io.ReadCloser, fpath string) (*contract.When, error) {
-	w := &contract.When{
-		Body: []byte{},
-	}
+	w := &contract.When{}
 
 	rline, headers, body, err := p.ParseHTTPMessage(r, fpath)
 	if err != nil {
