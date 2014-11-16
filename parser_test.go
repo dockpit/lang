@@ -39,4 +39,7 @@ func TestParseNotes(t *testing.T) {
 	assert.Equal(t, "text/html", cd.Resources[0].Cases[1].Then.Headers.Get("Content-Type"))
 	assert.Equal(t, `<html></html>`, cd.Resources[0].Cases[1].Then.Body)
 
+	//assert while parsing
+	assert.Equal(t, "github.com/dockpit/ex-store-orders", cd.Resources[0].Cases[1].While[0].ID)
+	assert.Equal(t, "list of notes", cd.Resources[0].Cases[1].While[0].CaseName)
 }

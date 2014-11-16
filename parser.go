@@ -28,6 +28,14 @@ func UnexpectedFileError(fi os.FileInfo) error {
 	return fmt.Errorf("Parser encountered a file without an extension: '%s', only 'given', 'when', 'then' or 'while' is allowed", fi.Name())
 }
 
+func UnexpectedLinkLineError(fpath, line string) error {
+	return fmt.Errorf("Parser encountered a 'while' file '%s' with an unexpected line: %s, expected format \"<service id> '<case name>'\"", fpath, line)
+}
+
+func UnexpectedLinkLineCaseNameError(fpath, line string) error {
+	return fmt.Errorf("Parser encountered a 'while' file '%s' with a invalid casename: \"%s\", expected single-quoted name: e.g 'name of the case'", fpath, line)
+}
+
 func UnexpectedHeaderLineError(fpath, giv string) error {
 	return fmt.Errorf("File '%s' has an unexpected header line: '%s', expected format 'Header-Key: Value'", fpath, giv)
 }
@@ -216,6 +224,39 @@ func (p *Parser) ParseThen(r io.ReadCloser, fpath string) (*contract.Then, error
 	return t, nil
 }
 
+// parses a while file
+func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]contract.While, error) {
+	ws := []contract.While{}
+
+	s := bufio.NewScanner(r)
+	for s.Scan() {
+
+		//dont mind empty lines
+		if strings.TrimSpace(s.Text()) == "" {
+			continue
+		}
+
+		//every non-empty line should have space seperated link
+		wp := strings.SplitN(s.Text(), " ", 2)
+		if len(wp) != 2 {
+			return ws, UnexpectedLinkLineError(fpath, s.Text())
+		}
+
+		cname := p.ToCaseName(wp[1])
+		if cname == "" {
+			return ws, UnexpectedLinkLineCaseNameError(fpath, wp[1])
+		}
+
+		//create while for case
+		ws = append(ws, contract.While{
+			ID:       wp[0],
+			CaseName: cname,
+		})
+	}
+
+	return ws, nil
+}
+
 //
 // Returns wether a given basename of a file path denotes a resource
 func (p *Parser) ToResourcePatternPart(basename string) string {
@@ -327,10 +368,8 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
 			//'keywords;
 			if filepath.Base(fpath) == "given" {
-
 				//@todo implement
 				return fmt.Errorf("'given' parsing is not yet implemented")
-
 			} else if filepath.Base(fpath) == "when" {
 				when, err := p.ParseWhen(f, fpath)
 				if err != nil {
@@ -346,10 +385,12 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
 				p.currentCase.Then = *then
 			} else if filepath.Base(fpath) == "while" {
+				whiles, err := p.ParseWhile(f, fpath)
+				if err != nil {
+					return err
+				}
 
-				//@todo implement
-				// return fmt.Errorf("'while' parsing is not yet implemented")
-
+				p.currentCase.While = whiles
 			} else {
 				return UnexpectedFileError(fi)
 			}
