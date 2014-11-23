@@ -262,8 +262,8 @@ func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]contract.While, er
 }
 
 // parses a 'given' file
-func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (contract.Given, error) {
-	g := contract.Given{}
+func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (map[string]contract.Given, error) {
+	gs := make(map[string]contract.Given)
 
 	s := bufio.NewScanner(r)
 	for s.Scan() {
@@ -276,26 +276,28 @@ func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (contract.Given, erro
 		//every non-empty line should have space seperated link
 		gp := strings.SplitN(s.Text(), ":", 2)
 		if len(gp) != 2 {
-			return g, UnexpectedStateLineError(fpath, s.Text())
+			return gs, UnexpectedStateLineError(fpath, s.Text())
 		}
 
 		//extract provider name
 		pname := strings.TrimSpace(gp[0])
 		if pname == "" {
-			return g, UnexpectedStateLineError(fpath, s.Text())
+			return gs, UnexpectedStateLineError(fpath, s.Text())
 		}
 
 		//extract state name as case name
 		sname := p.ToCaseName(strings.TrimSpace(gp[1]))
 		if sname == "" {
-			return g, UnexpectedStateLineError(fpath, s.Text())
+			return gs, UnexpectedStateLineError(fpath, s.Text())
 		}
 
 		//set given
-		g[pname] = sname
+		gs[pname] = contract.Given{
+			Name: sname,
+		}
 	}
 
-	return g, nil
+	return gs, nil
 }
 
 //
