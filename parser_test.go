@@ -28,6 +28,7 @@ func TestParseNotes(t *testing.T) {
 	assert.Equal(t, "list of notes", cd.Resources[0].Cases[1].Name)
 
 	//assert when parsing
+	assert.Equal(t, "one user", cd.Resources[0].Cases[1].Given["mysql"])
 	assert.Equal(t, "GET", cd.Resources[0].Cases[1].When.Method)
 	assert.Equal(t, "/notes", cd.Resources[0].Cases[1].When.Path)
 	assert.Equal(t, "en", cd.Resources[0].Cases[1].When.Headers.Get("Accept-Language"))

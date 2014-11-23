@@ -28,6 +28,10 @@ func UnexpectedFileError(fi os.FileInfo) error {
 	return fmt.Errorf("Parser encountered a file without an extension: '%s', only 'given', 'when', 'then' or 'while' is allowed", fi.Name())
 }
 
+func UnexpectedStateLineError(fpath, line string) error {
+	return fmt.Errorf("Parser encountered a 'given' file '%s', with an invalid line: \n%s\n expected format \"<state provider name> '<state name>'\"", fpath, line)
+}
+
 func UnexpectedLinkLineError(fpath, line string) error {
 	return fmt.Errorf("Parser encountered a 'while' file '%s' with an unexpected line: %s, expected format \"<service id> '<case name>'\"", fpath, line)
 }
@@ -224,7 +228,7 @@ func (p *Parser) ParseThen(r io.ReadCloser, fpath string) (*contract.Then, error
 	return t, nil
 }
 
-// parses a while file
+// parses a 'while' file
 func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]contract.While, error) {
 	ws := []contract.While{}
 
@@ -255,6 +259,43 @@ func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]contract.While, er
 	}
 
 	return ws, nil
+}
+
+// parses a 'given' file
+func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (contract.Given, error) {
+	g := contract.Given{}
+
+	s := bufio.NewScanner(r)
+	for s.Scan() {
+
+		//dont mind empty lines
+		if strings.TrimSpace(s.Text()) == "" {
+			continue
+		}
+
+		//every non-empty line should have space seperated link
+		gp := strings.SplitN(s.Text(), ":", 2)
+		if len(gp) != 2 {
+			return g, UnexpectedStateLineError(fpath, s.Text())
+		}
+
+		//extract provider name
+		pname := strings.TrimSpace(gp[0])
+		if pname == "" {
+			return g, UnexpectedStateLineError(fpath, s.Text())
+		}
+
+		//extract state name as case name
+		sname := p.ToCaseName(strings.TrimSpace(gp[1]))
+		if sname == "" {
+			return g, UnexpectedStateLineError(fpath, s.Text())
+		}
+
+		//set given
+		g[pname] = sname
+	}
+
+	return g, nil
 }
 
 //
@@ -367,8 +408,12 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
 			//'keywords;
 			if filepath.Base(fpath) == "given" {
-				//@todo implement
-				return fmt.Errorf("'given' parsing is not yet implemented")
+				given, err := p.ParseGiven(f, fpath)
+				if err != nil {
+					return err
+				}
+
+				p.currentCase.Given = given
 			} else if filepath.Base(fpath) == "when" {
 				when, err := p.ParseWhen(f, fpath)
 				if err != nil {
