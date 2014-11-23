@@ -287,14 +287,14 @@ func (p *Parser) ToCaseName(basename string) string {
 
 func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
-	//skip root
-	if fpath == p.Dir {
-		return nil
-	}
-
 	//cancel walk if something went wrong
 	if err != nil {
 		return err
+	}
+
+	//skip root
+	if fpath == p.Dir {
+		return nil
 	}
 
 	//care only about relative path
