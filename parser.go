@@ -401,6 +401,11 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 		}
 	} else {
 
+		//case files outside a case
+		if p.currentCase == nil {
+			return fmt.Errorf("Case file was found %s outside a case folder", fpath)
+		}
+
 		//files without extension have to be either when/then/given/while
 		if filepath.Ext(fpath) == "" {
 
@@ -429,10 +434,6 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 				then, err := p.ParseThen(f, fpath)
 				if err != nil {
 					return err
-				}
-
-				if p.currentCase == nil {
-					return fmt.Errorf("When encountered without current case: %s", fpath)
 				}
 
 				p.currentCase.Then = *then
