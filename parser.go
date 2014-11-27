@@ -422,16 +422,12 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 					return err
 				}
 
-				fmt.Println("When:", when)
-
 				p.currentCase.When = *when
 			} else if filepath.Base(fpath) == "then" {
 				then, err := p.ParseThen(f, fpath)
 				if err != nil {
 					return err
 				}
-
-				fmt.Println("Then:", then)
 
 				p.currentCase.Then = *then
 			} else if filepath.Base(fpath) == "while" {
