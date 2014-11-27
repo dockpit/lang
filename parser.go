@@ -431,7 +431,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 					return err
 				}
 
-				fmt.Println("AAAAAA", p.currentCase, p.currentCase.Then, then)
+				fmt.Println("AAAAAA", p.currentCase, then)
 				p.currentCase.Then = *then
 			} else if filepath.Base(fpath) == "while" {
 				whiles, err := p.ParseWhile(f, fpath)
