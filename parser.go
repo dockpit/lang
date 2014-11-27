@@ -431,7 +431,10 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 					return err
 				}
 
-				fmt.Println("AAAAAA", p.currentCase, then)
+				if p.currentCase == nil {
+					return fmt.Errorf("Race condition? cancelling:", p.currentCase)
+				}
+
 				p.currentCase.Then = *then
 			} else if filepath.Base(fpath) == "while" {
 				whiles, err := p.ParseWhile(f, fpath)
