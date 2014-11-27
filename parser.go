@@ -403,7 +403,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
 		//case files outside a case
 		if p.currentCase == nil {
-			return fmt.Errorf("Case file was found %s outside a case folder", fpath)
+			return fmt.Errorf("Case file '%s' was found outside a case folder", fpath)
 		}
 
 		//files without extension have to be either when/then/given/while
