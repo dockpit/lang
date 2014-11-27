@@ -389,6 +389,8 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 			//create the case from available data
 			p.currentCase = &contract.CaseData{
 				Name: cname,
+				When: contract.When{},
+				Then: contract.Then{},
 			}
 
 			//and append to resource
