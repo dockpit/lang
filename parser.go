@@ -429,6 +429,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 					return err
 				}
 
+				fmt.Println("AAAAAA", then)
 				if then == nil {
 					return fmt.Errorf("crapp:", then)
 				}
