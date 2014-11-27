@@ -432,7 +432,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 				}
 
 				if p.currentCase == nil {
-					return fmt.Errorf("Race condition? cancelling:", p.currentCase)
+					return fmt.Errorf("When encountered without current case: %s", fpath)
 				}
 
 				p.currentCase.Then = *then
