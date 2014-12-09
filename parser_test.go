@@ -43,5 +43,6 @@ func TestParseNotes(t *testing.T) {
 
 	//assert while parsing
 	assert.Equal(t, "github.com/dockpit/ex-store-orders", cd.Resources[0].Cases[1].While[0].ID)
-	assert.Equal(t, "list of notes", cd.Resources[0].Cases[1].While[0].CaseName)
+	assert.Equal(t, "GET", cd.Resources[0].Cases[1].While[0].Method)
+	assert.Equal(t, "/notes", cd.Resources[0].Cases[1].While[0].Path)
 }

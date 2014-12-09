@@ -32,8 +32,16 @@ func UnexpectedStateLineError(fpath, line string) error {
 	return fmt.Errorf("Parser encountered a 'given' file '%s', with an invalid line: \n%s\n expected format \"<state provider name> '<state name>'\"", fpath, line)
 }
 
+func UnexpectedLinkLineMethodError(fpath, giv string) error {
+	return fmt.Errorf("Parser encountered a 'while' file '%s' with an unexpected HTTP Method: '%s', expected one of: %s", fpath, giv, ValidHTTPMethods)
+}
+
+func UnexpectedLinkLinePathError(fpath, giv string) error {
+	return fmt.Errorf("Parser encountered a 'while' file '%s' with an unexpected path: '%s', expected absolute path (starting with '/')", fpath, giv)
+}
+
 func UnexpectedLinkLineError(fpath, line string) error {
-	return fmt.Errorf("Parser encountered a 'while' file '%s' with an unexpected line: %s, expected format \"<service id> '<case name>'\"", fpath, line)
+	return fmt.Errorf("Parser encountered a 'while' file '%s' with an unexpected line: %s, expected format \"<service id> <method> <path>\"", fpath, line)
 }
 
 func UnexpectedLinkLineCaseNameError(fpath, line string) error {
@@ -159,6 +167,31 @@ func (p *Parser) ParseHTTPMessage(r io.ReadCloser, fpath string) (string, http.H
 	return rline, headers, body, nil
 }
 
+//check method format
+func (p *Parser) parseMethod(input string) (string, error) {
+	method := ""
+	for _, m := range ValidHTTPMethods {
+		if m == input {
+			method = m
+			break
+		}
+	}
+
+	if method == "" {
+		return "", fmt.Errorf("unexpected method %s", input)
+	}
+
+	return method, nil
+}
+
+func (p *Parser) parsePath(input string) (string, error) {
+	if !path.IsAbs(input) {
+		return "", fmt.Errorf("Not an absolute path provided: %s", input)
+	}
+
+	return input, nil
+}
+
 // parses a when file loosely based on the http request spec
 func (p *Parser) ParseWhen(r io.ReadCloser, fpath string) (*contract.When, error) {
 	w := &contract.When{}
@@ -174,25 +207,18 @@ func (p *Parser) ParseWhen(r io.ReadCloser, fpath string) (*contract.When, error
 		return nil, UnexpectedRequestLineError(fpath, rline)
 	}
 
-	//check method format
-	method := ""
-	for _, m := range ValidHTTPMethods {
-		if m == rlinep[0] {
-			method = m
-			break
-		}
-	}
-
-	if method == "" {
+	//get method
+	w.Method, err = p.parseMethod(rlinep[0])
+	if err != nil {
 		return nil, UnexpectedRequestLineMethodError(fpath, rlinep[0])
 	}
-	w.Method = method
 
 	//check path
-	if !path.IsAbs(rlinep[1]) {
+	w.Path, err = p.parsePath(rlinep[1])
+	if err != nil {
 		return nil, UnexpectedRequestLinePathError(fpath, rlinep[1])
 	}
-	w.Path = rlinep[1]
+
 	w.Headers = headers
 	w.Body = body
 
@@ -231,6 +257,7 @@ func (p *Parser) ParseThen(r io.ReadCloser, fpath string) (*contract.Then, error
 // parses a 'while' file
 func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]contract.While, error) {
 	ws := []contract.While{}
+	var err error
 
 	s := bufio.NewScanner(r)
 	for s.Scan() {
@@ -241,21 +268,29 @@ func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]contract.While, er
 		}
 
 		//every non-empty line should have space seperated link
-		wp := strings.SplitN(s.Text(), " ", 2)
-		if len(wp) != 2 {
+		wp := strings.SplitN(s.Text(), " ", 3)
+		if len(wp) != 3 {
 			return ws, UnexpectedLinkLineError(fpath, s.Text())
 		}
 
-		cname := p.ToCaseName(wp[1])
-		if cname == "" {
-			return ws, UnexpectedLinkLineCaseNameError(fpath, wp[1])
+		//create while for case
+		w := contract.While{
+			ID: wp[0],
 		}
 
-		//create while for case
-		ws = append(ws, contract.While{
-			ID:       wp[0],
-			CaseName: cname,
-		})
+		// method
+		w.Method, err = p.parseMethod(wp[1])
+		if err != nil {
+			return nil, UnexpectedLinkLineMethodError(fpath, wp[1])
+		}
+
+		// path
+		w.Path, err = p.parsePath(wp[2])
+		if err != nil {
+			return nil, UnexpectedLinkLinePathError(fpath, wp[2])
+		}
+
+		ws = append(ws, w)
 	}
 
 	return ws, nil
