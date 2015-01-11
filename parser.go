@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/dockpit/contrast/assert"
 	"github.com/dockpit/pit/contract"
 )
 
@@ -370,8 +371,23 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 		return err
 	}
 
-	//skip root
+	//if root check of archetype.json, otherwise skip
 	if fpath == p.Dir {
+
+		atf, err := os.Open(filepath.Join(fpath, "archetypes.json"))
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
+
+		//immediately parse it
+		p.data.Archetypes, err = assert.LoadArchetypes(atf)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}
 

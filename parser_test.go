@@ -18,6 +18,8 @@ func TestParseNotes(t *testing.T) {
 	}
 
 	assert.NotEqual(t, nil, cd)
+
+	assert.Equal(t, 1, len(cd.Archetypes))
 	assert.Equal(t, 5, len(cd.Resources))
 	assert.Equal(t, 3, len(cd.Resources[0].Cases))
 	assert.Equal(t, 2, len(cd.Resources[1].Cases))
