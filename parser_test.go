@@ -10,7 +10,7 @@ import (
 )
 
 func TestParseNotes(t *testing.T) {
-	p := lang.NewParser(filepath.Join("docs", "examples", "note_service"))
+	p := lang.NewParser(filepath.Join(".example", "note_service"))
 
 	cd, err := p.Parse()
 	if err != nil {
