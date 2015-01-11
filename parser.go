@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/dockpit/contrast/assert"
-	"github.com/dockpit/pit/contract"
+	"github.com/dockpit/lang/manifest"
 )
 
 var CaseEX = regexp.MustCompile(`^'(.*)'$`)
@@ -97,13 +97,13 @@ func (n *Node) Append(nn *Node, part string) {
 type Parser struct {
 	Dir string
 
-	data  *contract.ContractData
+	data  *manifest.ContractData
 	nodes map[string]*Node
 	cases map[string]string
 
 	currentNode     *Node
-	currentResource *contract.ResourceData
-	currentCase     *contract.CaseData
+	currentResource *manifest.ResourceData
+	currentCase     *manifest.CaseData
 }
 
 func NewParser(dir string) *Parser {
@@ -116,7 +116,7 @@ func NewParser(dir string) *Parser {
 
 func (p *Parser) reset() {
 	root := NewNode()
-	p.data = &contract.ContractData{}
+	p.data = &manifest.ContractData{}
 	p.nodes = map[string]*Node{".": root}
 	p.cases = map[string]string{}
 	p.currentNode = root
@@ -194,8 +194,8 @@ func (p *Parser) parsePath(input string) (string, error) {
 }
 
 // parses a when file loosely based on the http request spec
-func (p *Parser) ParseWhen(r io.ReadCloser, fpath string) (*contract.When, error) {
-	w := &contract.When{}
+func (p *Parser) ParseWhen(r io.ReadCloser, fpath string) (*manifest.When, error) {
+	w := &manifest.When{}
 
 	rline, headers, body, err := p.ParseHTTPMessage(r, fpath)
 	if err != nil {
@@ -227,8 +227,8 @@ func (p *Parser) ParseWhen(r io.ReadCloser, fpath string) (*contract.When, error
 }
 
 // parses a then file loosely based on the format of a standard http message
-func (p *Parser) ParseThen(r io.ReadCloser, fpath string) (*contract.Then, error) {
-	t := &contract.Then{}
+func (p *Parser) ParseThen(r io.ReadCloser, fpath string) (*manifest.Then, error) {
+	t := &manifest.Then{}
 
 	//parse as a standard http message
 	rline, headers, body, err := p.ParseHTTPMessage(r, fpath)
@@ -256,8 +256,8 @@ func (p *Parser) ParseThen(r io.ReadCloser, fpath string) (*contract.Then, error
 }
 
 // parses a 'while' file
-func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]contract.While, error) {
-	ws := []contract.While{}
+func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]manifest.While, error) {
+	ws := []manifest.While{}
 	var err error
 
 	s := bufio.NewScanner(r)
@@ -275,7 +275,7 @@ func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]contract.While, er
 		}
 
 		//create while for case
-		w := contract.While{
+		w := manifest.While{
 			ID: wp[0],
 		}
 
@@ -298,8 +298,8 @@ func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]contract.While, er
 }
 
 // parses a 'given' file
-func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (map[string]contract.Given, error) {
-	gs := make(map[string]contract.Given)
+func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (map[string]manifest.Given, error) {
+	gs := make(map[string]manifest.Given)
 
 	s := bufio.NewScanner(r)
 	for s.Scan() {
@@ -328,7 +328,7 @@ func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (map[string]contract.
 		}
 
 		//set given
-		gs[pname] = contract.Given{
+		gs[pname] = manifest.Given{
 			Name: sname,
 		}
 	}
@@ -416,9 +416,9 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 			parent.Append(p.currentNode, part)
 
 			//use node structure to create and append resource to contract
-			p.currentResource = &contract.ResourceData{
+			p.currentResource = &manifest.ResourceData{
 				Pattern: p.currentNode.Pattern,
-				Cases:   []*contract.CaseData{},
+				Cases:   []*manifest.CaseData{},
 			}
 
 			// add to contract data
@@ -438,10 +438,10 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 			}
 
 			//create the case from available data
-			p.currentCase = &contract.CaseData{
+			p.currentCase = &manifest.CaseData{
 				Name: cname,
-				When: contract.When{},
-				Then: contract.Then{},
+				When: manifest.When{},
+				Then: manifest.Then{},
 			}
 
 			//and append to resource
@@ -508,7 +508,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 	return nil
 }
 
-func (p *Parser) Parse() (*contract.ContractData, error) {
+func (p *Parser) Parse() (*manifest.ContractData, error) {
 
 	//reset parser afterwards
 	defer p.reset()
