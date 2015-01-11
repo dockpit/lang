@@ -30,7 +30,7 @@ type Pair struct {
 	Archetypes []*assert.Archetype
 }
 
-func NewPairFromData(data *CaseData, cdata *ContractData) (*Pair, error) {
+func NewPairFromData(data *CaseData, cdata *ManifestData) (*Pair, error) {
 
 	//create request from data
 	req, err := http.NewRequest(data.When.Method, data.When.Path, strings.NewReader(data.When.Body))

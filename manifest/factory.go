@@ -13,16 +13,16 @@ func NewFactory() *Factory {
 	return &Factory{}
 }
 
-func (f *Factory) Draft(loc string) (*Contract, error) {
+func (f *Factory) Draft(loc string) (*Manifest, error) {
 	data, err := f.Load(loc)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewContract(data)
+	return NewManifest(data)
 }
 
-func (f *Factory) Load(loc string) (*ContractData, error) {
+func (f *Factory) Load(loc string) (*ManifestData, error) {
 
 	//create as link
 	link, err := NewLink(loc)
@@ -38,7 +38,7 @@ func (f *Factory) Load(loc string) (*ContractData, error) {
 	defer r.Close()
 
 	//decode into data struct
-	c := &ContractData{}
+	c := &ManifestData{}
 	dec := json.NewDecoder(r)
 	err = dec.Decode(c)
 	if err != nil {

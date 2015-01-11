@@ -11,7 +11,7 @@ import (
 	. "github.com/dockpit/lang/manifest"
 )
 
-// test JSON -> *ContractData
+// test JSON -> *ManifestData
 func TestFactoryLoading(t *testing.T) {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -27,7 +27,7 @@ func TestFactoryLoading(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	//assert contract data
+	//assert manifest data
 	assert.Equal(t, "auth", data.Name)
 
 	//assert resource
@@ -51,9 +51,9 @@ func TestFactoryLoading(t *testing.T) {
 	assert.Equal(t, "github.com/dockpit/ex-store-customers", data.Resources[0].Cases[0].While[0].ID)
 }
 
-// test JSON -> ContractData -> Contract
+// test JSON -> ManifestData -> Manifest
 func TestFactoryDraft(t *testing.T) {
-	var c C
+	var m M
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -63,16 +63,16 @@ func TestFactoryDraft(t *testing.T) {
 	f := NewFactory()
 
 	//when we load json example
-	c, err = f.Draft(filepath.Join(wd, "auth.json"))
+	m, err = f.Draft(filepath.Join(wd, "auth.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	//assert contract data
-	assert.Equal(t, "auth", c.Name())
+	//assert manifest data
+	assert.Equal(t, "auth", m.Name())
 
 	//assert dependencies
-	deps, err := c.Dependencies()
+	deps, err := m.Dependencies()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestFactoryDraft(t *testing.T) {
 	assert.Equal(t, []string{}, deps["github.com/dockpit/ex-store-customers"])
 
 	//assert states
-	states, err := c.States()
+	states, err := m.States()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestFactoryDraft(t *testing.T) {
 	assert.Equal(t, []string{"some users"}, states["mongodb"])
 
 	//assert resource
-	resources, err := c.Resources()
+	resources, err := m.Resources()
 	if err != nil {
 		t.Fatal(err)
 	}

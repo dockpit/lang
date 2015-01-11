@@ -97,7 +97,7 @@ func (n *Node) Append(nn *Node, part string) {
 type Parser struct {
 	Dir string
 
-	data  *manifest.ContractData
+	data  *manifest.ManifestData
 	nodes map[string]*Node
 	cases map[string]string
 
@@ -116,7 +116,7 @@ func NewParser(dir string) *Parser {
 
 func (p *Parser) reset() {
 	root := NewNode()
-	p.data = &manifest.ContractData{}
+	p.data = &manifest.ManifestData{}
 	p.nodes = map[string]*Node{".": root}
 	p.cases = map[string]string{}
 	p.currentNode = root
@@ -415,13 +415,13 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 			//apprent to parent
 			parent.Append(p.currentNode, part)
 
-			//use node structure to create and append resource to contract
+			//use node structure to create and append resource to manifest
 			p.currentResource = &manifest.ResourceData{
 				Pattern: p.currentNode.Pattern,
 				Cases:   []*manifest.CaseData{},
 			}
 
-			// add to contract data
+			// add to manifest data
 			p.data.Resources = append(p.data.Resources, p.currentResource)
 
 		} else if cname := p.ToCaseName(filepath.Base(rel)); cname != "" {
@@ -508,7 +508,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 	return nil
 }
 
-func (p *Parser) Parse() (*manifest.ContractData, error) {
+func (p *Parser) Parse() (*manifest.ManifestData, error) {
 
 	//reset parser afterwards
 	defer p.reset()

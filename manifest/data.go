@@ -45,7 +45,7 @@ type CaseData struct {
 //
 //
 //
-type ContractData struct {
+type ManifestData struct {
 	Name       string              `json:"name"`
 	Resources  []*ResourceData     `json:"resources"`
 	Archetypes []*assert.Archetype `json:"archetypes"`

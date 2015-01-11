@@ -50,7 +50,7 @@ type R interface {
 //
 //
 //
-type C interface {
+type M interface {
 	Name() string
 	Resources() ([]R, error)
 	States() (map[string][]string, error)

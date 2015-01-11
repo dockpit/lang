@@ -2,13 +2,13 @@ package manifest
 
 //
 //
-// represents a service contract
-type Contract struct {
+// represents a service manifest
+type Manifest struct {
 	name      string
 	resources []R
 }
 
-func NewContract(data *ContractData) (*Contract, error) {
+func NewManifest(data *ManifestData) (*Manifest, error) {
 
 	res := []R{}
 	for _, r := range data.Resources {
@@ -28,20 +28,20 @@ func NewContract(data *ContractData) (*Contract, error) {
 		res = append(res, NewResource(r.Pattern, cases...))
 	}
 
-	return &Contract{name: data.Name, resources: res}, nil
+	return &Manifest{name: data.Name, resources: res}, nil
 }
 
-func (c *Contract) Name() string {
+func (c *Manifest) Name() string {
 	return c.name
 }
 
-func (c *Contract) Resources() ([]R, error) {
+func (c *Manifest) Resources() ([]R, error) {
 	return c.resources, nil
 }
 
 // walk resources, actions and pairs to map all necessary states
-// to test against the contract
-func (c *Contract) States() (map[string][]string, error) {
+// to test against the manifest
+func (c *Manifest) States() (map[string][]string, error) {
 	states := map[string][]string{}
 
 	res, err := c.Resources()
@@ -79,7 +79,7 @@ func (c *Contract) States() (map[string][]string, error) {
 
 // walk resources, actions and pairs to map all necessary dependencies
 // to be mocked for isolation
-func (c *Contract) Dependencies() (map[string][]string, error) {
+func (c *Manifest) Dependencies() (map[string][]string, error) {
 	deps := map[string][]string{}
 
 	res, err := c.Resources()
