@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dockpit/contrast/assert"
+	"github.com/dockpit/assert/strategy"
 	"github.com/dockpit/lang/manifest"
 )
 
@@ -383,7 +383,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 		}
 
 		//immediately parse it
-		p.data.Archetypes, err = assert.LoadArchetypes(atf)
+		p.data.Archetypes, err = strategy.LoadArchetypes(atf)
 		if err != nil {
 			return err
 		}

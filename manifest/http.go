@@ -13,8 +13,8 @@ import (
 
 	"github.com/zenazn/goji/web"
 
-	"github.com/dockpit/contrast"
-	"github.com/dockpit/contrast/assert"
+	"github.com/dockpit/assert"
+	"github.com/dockpit/assert/strategy"
 	"github.com/dockpit/pit/config"
 )
 
@@ -27,7 +27,7 @@ type Pair struct {
 	Response   *http.Response
 	While      []While
 	Given      map[string]Given
-	Archetypes []*assert.Archetype
+	Archetypes []*strategy.Archetype
 }
 
 func NewPairFromData(data *CaseData, cdata *ManifestData) (*Pair, error) {
@@ -107,10 +107,10 @@ func (p *Pair) IsExpectedResponse(resp *http.Response) error {
 	}
 
 	//create parser using mimetype
-	parser := contrast.Parser(mimet, p.Archetypes)
+	parser := assert.Parser(mimet, p.Archetypes)
 
-	//assert content
-	err = contrast.Assert(c1, c2, parser)
+	//assert if content follows the example
+	err = assert.Follows(c1, c2, parser)
 	if err != nil {
 		return fmt.Errorf("Content Assertion: %s\n Archetypes: %s", err, p.Archetypes)
 	}

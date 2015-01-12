@@ -3,7 +3,7 @@ package manifest
 import (
 	"net/http"
 
-	"github.com/dockpit/contrast/assert"
+	"github.com/dockpit/assert/strategy"
 )
 
 type Given struct {
@@ -46,7 +46,7 @@ type CaseData struct {
 //
 //
 type ManifestData struct {
-	Name       string              `json:"name"`
-	Resources  []*ResourceData     `json:"resources"`
-	Archetypes []*assert.Archetype `json:"archetypes"`
+	Name       string                `json:"name"`
+	Resources  []*ResourceData       `json:"resources"`
+	Archetypes []*strategy.Archetype `json:"archetypes"`
 }
