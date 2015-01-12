@@ -48,7 +48,7 @@ func TestFactoryLoading(t *testing.T) {
 	//assert cases: while
 	assert.Equal(t, "GET", data.Resources[0].Cases[0].While[0].Method)
 	assert.Equal(t, "/users", data.Resources[0].Cases[0].While[0].Path)
-	assert.Equal(t, "github.com/dockpit/ex-store-customers", data.Resources[0].Cases[0].While[0].ID)
+	assert.Equal(t, "github.com/dockpit/pit-token", data.Resources[0].Cases[0].While[0].ID)
 }
 
 // test JSON -> ManifestData -> Manifest
@@ -79,7 +79,7 @@ func TestFactoryDraft(t *testing.T) {
 
 	//should have 1 dependency with empty list of cases
 	assert.Equal(t, 1, len(deps))
-	assert.Equal(t, []string{}, deps["github.com/dockpit/ex-store-customers"])
+	assert.Equal(t, []string{}, deps["github.com/dockpit/pit-token"])
 
 	//assert states
 	states, err := m.States()
