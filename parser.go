@@ -91,9 +91,6 @@ func (n *Node) Append(nn *Node, part string) {
 	nn.Pattern = path.Join(n.Pattern, part)
 }
 
-//
-//
-//
 type Parser struct {
 	Dir string
 
@@ -336,7 +333,6 @@ func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (map[string]manifest.
 	return gs, nil
 }
 
-//
 // Returns wether a given basename of a file path denotes a resource
 func (p *Parser) ToResourcePatternPart(basename string) string {
 	m := ResourceEX.FindStringSubmatch(basename)
@@ -353,7 +349,6 @@ func (p *Parser) ToResourcePatternPart(basename string) string {
 	return string(res)
 }
 
-//
 // Returns wether a given basename of a file path denotes a case example
 func (p *Parser) ToCaseName(basename string) string {
 	m := CaseEX.FindStringSubmatch(basename)

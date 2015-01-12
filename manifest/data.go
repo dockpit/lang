@@ -42,9 +42,6 @@ type CaseData struct {
 	While []While          `json:"while"`
 }
 
-//
-//
-//
 type ManifestData struct {
 	Name       string                `json:"name"`
 	Resources  []*ResourceData       `json:"resources"`

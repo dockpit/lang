@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 )
 
-//
-//
-//
 type Factory struct{}
 
 func NewFactory() *Factory {

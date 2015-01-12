@@ -1,7 +1,5 @@
 package manifest
 
-//
-//
 // represents a service manifest
 type Manifest struct {
 	name      string
