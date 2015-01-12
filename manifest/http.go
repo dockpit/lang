@@ -196,15 +196,7 @@ func (p *Pair) GenerateTest() TestFunc {
 
 		//ask each mocked dependency if it was called
 		for _, while := range p.While {
-			portb := conf.PortBindingsForDep(while.ID)
-
-			//@todo, grabbig the first (seems fundamentally flawed)
-			//@see github.com/dockpit/mock/manager/manager.go
-			var port string
-			for _, pb := range portb {
-				port = pb[0].HostPort
-				break
-			}
+			ports := conf.PortsForDependency(while.ID)
 
 			//parse host and form endpoint to get recordings from
 			dhosturl, err := url.Parse(dhost)
@@ -213,9 +205,11 @@ func (p *Pair) GenerateTest() TestFunc {
 			}
 
 			//create rec url
+			//@todo, grabbig the first (seems fundamentally flawed)
+			//@see github.com/dockpit/mock/manager/manager.go
 			recurl, err := url.Parse(fmt.Sprintf("http://%s:%s/_recordings?method=%s&path=%s",
 				strings.SplitN(dhosturl.Host, ":", 2)[0],
-				port,
+				ports[0].Host,
 				url.QueryEscape(while.Method),
 				url.QueryEscape(while.Path),
 			))
