@@ -96,7 +96,7 @@ func (p *Pair) IsExpectedResponse(resp *http.Response) error {
 
 	//assert response code
 	if p.Response.StatusCode != resp.StatusCode {
-		return AssertError{fmt.Sprintf("StatusCode not equal, expected '%d' got: '%d', content: '%s'", p.Response.StatusCode, resp.StatusCode, string(c2))}
+		return AssertError{fmt.Sprintf("StatusCode not equal, expected '%d' but got '%d' with content: '%s'", p.Response.StatusCode, resp.StatusCode, string(c2))}
 	}
 
 	//determine content mime type by looking at the example body
