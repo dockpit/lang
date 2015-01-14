@@ -18,9 +18,12 @@ import (
 	"github.com/dockpit/pit/config"
 )
 
-//
-//
-//
+// An assert error simply denotes the failure of an assert
+// during the test and the integrity of the program is fine
+type AssertError struct{ err string }
+
+func (e AssertError) Error() string { return e.err }
+
 type Pair struct {
 	Name       string
 	Request    *http.Request
@@ -93,7 +96,7 @@ func (p *Pair) IsExpectedResponse(resp *http.Response) error {
 
 	//assert response code
 	if p.Response.StatusCode != resp.StatusCode {
-		return fmt.Errorf("StatusCode not equal, expected '%d' got: '%d', content: '%s'", p.Response.StatusCode, resp.StatusCode, string(c2))
+		return AssertError{fmt.Sprintf("StatusCode not equal, expected '%d' got: '%d', content: '%s'", p.Response.StatusCode, resp.StatusCode, string(c2))}
 	}
 
 	//determine content mime type by looking at the example body
@@ -112,7 +115,7 @@ func (p *Pair) IsExpectedResponse(resp *http.Response) error {
 	//assert if content follows the example
 	err = assert.Follows(c1, c2, parser)
 	if err != nil {
-		return fmt.Errorf("Content Assertion: %s\n Archetypes: %s", err, p.Archetypes)
+		return AssertError{fmt.Sprintf("Content Assertion: %s\n Archetypes: %s", err, p.Archetypes)}
 	}
 
 	//check if resp has _at least_ the expected headers
@@ -121,7 +124,7 @@ ExpVals:
 	for key, expvals := range p.Response.Header {
 		val := resp.Header.Get(key)
 		if val == "" {
-			return fmt.Errorf("Expected response with '%s' header", key)
+			return AssertError{fmt.Sprintf("Expected response with '%s' header", key)}
 		}
 
 		for _, expval := range expvals {
@@ -131,7 +134,7 @@ ExpVals:
 		}
 
 		//not any of the expected values
-		return fmt.Errorf("Expected '%s' header to have one of the following values: %s, received: %s", key, expvals, val)
+		return AssertError{fmt.Sprintf("Expected '%s' header to have one of the following values: %s, received: %s", key, expvals, val)}
 	}
 
 	return nil
@@ -191,7 +194,7 @@ func (p *Pair) GenerateTest() TestFunc {
 
 		//let the pair assert itself
 		if err := p.IsExpectedResponse(resp); err != nil {
-			return UnexpectedResponseError(req, p.Response, resp, err)
+			return err
 		}
 
 		//ask each mocked dependency if it was called
@@ -228,7 +231,7 @@ func (p *Pair) GenerateTest() TestFunc {
 
 			//receiving something else then 200 is probably bad
 			if recresp.StatusCode > 200 {
-				return fmt.Errorf("Mock recording doesn't have data for %s %s %s, returned: %d", while.ID, while.Method, while.Path, recresp.StatusCode)
+				return AssertError{fmt.Sprintf("Mock recording doesn't have data for %s %s %s, returned: %d", while.ID, while.Method, while.Path, recresp.StatusCode)}
 			}
 
 			//decode to get information
@@ -241,7 +244,7 @@ func (p *Pair) GenerateTest() TestFunc {
 
 			//count mock
 			if rec.Count < 1 {
-				return fmt.Errorf("Mock %s (%s %s) should have been called at least once", while.ID, while.Method, while.Path)
+				return AssertError{fmt.Sprintf("Mock %s (%s %s) should have been called at least once", while.ID, while.Method, while.Path)}
 			}
 		}
 

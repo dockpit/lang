@@ -11,10 +11,6 @@ import (
 	"github.com/dockpit/state"
 )
 
-func UnexpectedResponseError(req http.Request, exp *http.Response, got *http.Response, err error) error {
-	return TestingError(fmt.Sprintf("Unexpected Response from '%s': %s", req.URL.Path, err.Error()))
-}
-
 func TestingError(msg string) error { return fmt.Errorf("Test: %s", msg) }
 func MockingError(msg string) error { return fmt.Errorf("Mock: %s", msg) }
 
