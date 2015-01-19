@@ -213,7 +213,7 @@ func (p *Pair) GenerateTest() TestFunc {
 			recurl, err := url.Parse(fmt.Sprintf("http://%s:%s/_recordings?case=%s",
 				strings.SplitN(dhosturl.Host, ":", 2)[0],
 				ports[0].Host,
-				url.QueryEscape("healthy"), //@todo get from while
+				url.QueryEscape(while.Case),
 			))
 
 			if err != nil {
