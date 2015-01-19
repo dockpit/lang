@@ -46,8 +46,7 @@ func TestFactoryLoading(t *testing.T) {
 	assert.Equal(t, `[{"id": "32"}]`, data.Resources[0].Cases[0].Then.Body)
 
 	//assert cases: while
-	assert.Equal(t, "GET", data.Resources[0].Cases[0].While[0].Method)
-	assert.Equal(t, "/users", data.Resources[0].Cases[0].While[0].Path)
+	assert.Equal(t, "list all users", data.Resources[0].Cases[0].While[0].Case)
 	assert.Equal(t, "github.com/dockpit/pit-token", data.Resources[0].Cases[0].While[0].ID)
 }
 

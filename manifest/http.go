@@ -210,11 +210,10 @@ func (p *Pair) GenerateTest() TestFunc {
 			//create rec url
 			//@todo, grabbig the first (seems fundamentally flawed)
 			//@see github.com/dockpit/mock/manager/manager.go
-			recurl, err := url.Parse(fmt.Sprintf("http://%s:%s/_recordings?method=%s&path=%s",
+			recurl, err := url.Parse(fmt.Sprintf("http://%s:%s/_recordings?case=%s",
 				strings.SplitN(dhosturl.Host, ":", 2)[0],
 				ports[0].Host,
-				url.QueryEscape(while.Method),
-				url.QueryEscape(while.Path),
+				url.QueryEscape("healthy"), //@todo get from while
 			))
 
 			if err != nil {
@@ -231,7 +230,7 @@ func (p *Pair) GenerateTest() TestFunc {
 
 			//receiving something else then 200 is probably bad
 			if recresp.StatusCode > 200 {
-				return AssertError{fmt.Sprintf("Mock recording doesn't have data for %s %s %s, returned: %d", while.ID, while.Method, while.Path, recresp.StatusCode)}
+				return AssertError{fmt.Sprintf("Mock %s recording doesn't have data case %s, returned: %d", while.ID, while.Case, recresp.StatusCode)}
 			}
 
 			//decode to get information
@@ -244,7 +243,7 @@ func (p *Pair) GenerateTest() TestFunc {
 
 			//count mock
 			if rec.Count < 1 {
-				return AssertError{fmt.Sprintf("Mock %s (%s %s) should have been called at least once", while.ID, while.Method, while.Path)}
+				return AssertError{fmt.Sprintf("Mock %s expected case %s to have been called", while.ID, while.Case)}
 			}
 		}
 
@@ -289,6 +288,7 @@ func (a *Action) Tests() []TestFunc {
 	return tests
 }
 
+//@todo this is deceprated
 func (a *Action) Handler(r *http.Request) (web.Handler, error) {
 
 	if r != nil {

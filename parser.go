@@ -42,7 +42,7 @@ func UnexpectedLinkLinePathError(fpath, giv string) error {
 }
 
 func UnexpectedLinkLineError(fpath, line string) error {
-	return fmt.Errorf("Parser encountered a 'while' file '%s' with an unexpected line: %s, expected format \"<service id> <method> <path>\"", fpath, line)
+	return fmt.Errorf("Parser encountered a 'while' file '%s' with an unexpected line: %s, expected format \"<service id> '<case name>'\"", fpath, line)
 }
 
 func UnexpectedLinkLineCaseNameError(fpath, line string) error {
@@ -255,7 +255,6 @@ func (p *Parser) ParseThen(r io.ReadCloser, fpath string) (*manifest.Then, error
 // parses a 'while' file
 func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]manifest.While, error) {
 	ws := []manifest.While{}
-	var err error
 
 	s := bufio.NewScanner(r)
 	for s.Scan() {
@@ -266,8 +265,8 @@ func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]manifest.While, er
 		}
 
 		//every non-empty line should have space seperated link
-		wp := strings.SplitN(s.Text(), " ", 3)
-		if len(wp) != 3 {
+		wp := strings.SplitN(s.Text(), " ", 2)
+		if len(wp) != 2 {
 			return ws, UnexpectedLinkLineError(fpath, s.Text())
 		}
 
@@ -276,18 +275,12 @@ func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]manifest.While, er
 			ID: wp[0],
 		}
 
-		// method
-		w.Method, err = p.parseMethod(wp[1])
-		if err != nil {
-			return nil, UnexpectedLinkLineMethodError(fpath, wp[1])
+		cname := p.ToCaseName(strings.TrimSpace(wp[1]))
+		if cname == "" {
+			return ws, UnexpectedLinkLineError(fpath, s.Text())
 		}
 
-		// path
-		w.Path, err = p.parsePath(wp[2])
-		if err != nil {
-			return nil, UnexpectedLinkLinePathError(fpath, wp[2])
-		}
-
+		w.Case = cname
 		ws = append(ws, w)
 	}
 
