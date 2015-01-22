@@ -352,6 +352,33 @@ func (p *Parser) ToCaseName(basename string) string {
 	return m[1]
 }
 
+func (p *Parser) enterResource(rel, fpath, part string) error {
+	var parent *Node
+	var ok bool
+
+	//create and add new resource node
+	p.currentNode = NewNode()
+	p.nodes[rel] = p.currentNode
+
+	//get parent node
+	if parent, ok = p.nodes[filepath.Dir(rel)]; !ok {
+		return fmt.Errorf("No parent node found for '%s'", fpath)
+	}
+
+	//apprent to parent
+	parent.Append(p.currentNode, part)
+
+	//use node structure to create and append resource to manifest
+	p.currentResource = &manifest.ResourceData{
+		Pattern: p.currentNode.Pattern,
+		Cases:   []*manifest.CaseData{},
+	}
+
+	// add to manifest data
+	p.data.Resources = append(p.data.Resources, p.currentResource)
+	return nil
+}
+
 func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 
 	//cancel walk if something went wrong
@@ -359,9 +386,19 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 		return err
 	}
 
-	//if root check of archetype.json, otherwise skip
+	//care only about relative path
+	rel, err := filepath.Rel(p.Dir, fpath)
+	if err != nil {
+		return err
+	}
+
+	//if root folder do some special stuff
 	if fpath == p.Dir {
 
+		//add root resource
+		p.enterResource(rel, fpath, "/")
+
+		//check for archetype
 		atf, err := os.Open(filepath.Join(fpath, "archetypes.json"))
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -379,39 +416,10 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 		return nil
 	}
 
-	//care only about relative path
-	rel, err := filepath.Rel(p.Dir, fpath)
-	if err != nil {
-		return err
-	}
-
 	//directories are expected to be either resources or cases
 	if fi.IsDir() {
 		if part := p.ToResourcePatternPart(filepath.Base(rel)); part != "" {
-			var parent *Node
-			var ok bool
-
-			//create and add new resource node
-			p.currentNode = NewNode()
-			p.nodes[rel] = p.currentNode
-
-			//get parent node
-			if parent, ok = p.nodes[filepath.Dir(rel)]; !ok {
-				return fmt.Errorf("No parent node found for '%s'", fpath)
-			}
-
-			//apprent to parent
-			parent.Append(p.currentNode, part)
-
-			//use node structure to create and append resource to manifest
-			p.currentResource = &manifest.ResourceData{
-				Pattern: p.currentNode.Pattern,
-				Cases:   []*manifest.CaseData{},
-			}
-
-			// add to manifest data
-			p.data.Resources = append(p.data.Resources, p.currentResource)
-
+			p.enterResource(rel, fpath, part)
 		} else if cname := p.ToCaseName(filepath.Base(rel)); cname != "" {
 
 			//get current resource (if any)
