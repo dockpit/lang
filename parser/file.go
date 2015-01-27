@@ -1,4 +1,4 @@
-package lang
+package parser
 
 import (
 	"bufio"
@@ -19,7 +19,6 @@ import (
 var CaseEX = regexp.MustCompile(`^'(.*)'$`)
 var ResourceEX = regexp.MustCompile(`^- (.*)`)
 var VariableEX = regexp.MustCompile(`(\(.*?\))`)
-var ValidHTTPMethods = []string{"GET", "POST", "PUT"} //@todo add more
 
 func UnexpectedDirError(fi os.FileInfo) error {
 	return fmt.Errorf("Parser encountered an unexpected directory: %s, expected a resource directory (starting with `- `), or a case directory formatted as `'case name'`", fi.Name())
@@ -49,30 +48,6 @@ func UnexpectedLinkLineCaseNameError(fpath, line string) error {
 	return fmt.Errorf("Parser encountered a 'while' file '%s' with a invalid casename: \"%s\", expected single-quoted name: e.g 'name of the case'", fpath, line)
 }
 
-func UnexpectedHeaderLineError(fpath, giv string) error {
-	return fmt.Errorf("File '%s' has an unexpected header line: '%s', expected format 'Header-Key: Value'", fpath, giv)
-}
-
-func UnexpectedResponseLineError(fpath, line string) error {
-	return fmt.Errorf("Parser encountered a 'then' file '%s' with an unexpected first line: %s, expected format '<HTTP Status Code> <Status Text>'", fpath, line)
-}
-
-func UnexpectedResponseLineCodeError(fpath, giv string, err error) error {
-	return fmt.Errorf("Parser encountered a 'then' file '%s' with an unexpected status code: %s, expected a number. (%s)", fpath, giv, err)
-}
-
-func UnexpectedRequestLineError(fpath, line string) error {
-	return fmt.Errorf("Parser encountered a 'when' file '%s' with an unexpected first line: %s, expected format '<HTTP method> <path>'", fpath, line)
-}
-
-func UnexpectedRequestLineMethodError(fpath, giv string) error {
-	return fmt.Errorf("Parser encountered a 'when' file '%s' with an unexpected HTTP Method in the first line: '%s', expected one of: %s", fpath, giv, ValidHTTPMethods)
-}
-
-func UnexpectedRequestLinePathError(fpath, giv string) error {
-	return fmt.Errorf("Parser encountered a 'when' file '%s' with an unexpected path in the first line: '%s', expected absolute path (starting with '/')", fpath, giv)
-}
-
 type Node struct {
 	Pattern  string
 	Children []*Node
@@ -91,7 +66,7 @@ func (n *Node) Append(nn *Node, part string) {
 	nn.Pattern = path.Join(n.Pattern, part)
 }
 
-type Parser struct {
+type File struct {
 	Dir string
 
 	data  *manifest.ManifestData
@@ -103,15 +78,15 @@ type Parser struct {
 	currentCase     *manifest.CaseData
 }
 
-func NewParser(dir string) *Parser {
-	p := &Parser{
+func NewFile(dir string) *File {
+	p := &File{
 		Dir: dir,
 	}
 	p.reset()
 	return p
 }
 
-func (p *Parser) reset() {
+func (p *File) reset() {
 	root := NewNode()
 	p.data = &manifest.ManifestData{}
 	p.nodes = map[string]*Node{".": root}
@@ -121,7 +96,7 @@ func (p *Parser) reset() {
 	p.currentCase = nil
 }
 
-func (p *Parser) ParseHTTPMessage(r io.ReadCloser, fpath string) (string, http.Header, string, error) {
+func (p *File) ParseHTTPMessage(r io.ReadCloser, fpath string) (string, http.Header, string, error) {
 
 	inbody := false
 	rline := ""
@@ -166,7 +141,7 @@ func (p *Parser) ParseHTTPMessage(r io.ReadCloser, fpath string) (string, http.H
 }
 
 //check method format
-func (p *Parser) parseMethod(input string) (string, error) {
+func (p *File) parseMethod(input string) (string, error) {
 	method := ""
 	for _, m := range ValidHTTPMethods {
 		if m == input {
@@ -182,7 +157,7 @@ func (p *Parser) parseMethod(input string) (string, error) {
 	return method, nil
 }
 
-func (p *Parser) parsePath(input string) (string, error) {
+func (p *File) parsePath(input string) (string, error) {
 	if !path.IsAbs(input) {
 		return "", fmt.Errorf("Not an absolute path provided: %s", input)
 	}
@@ -191,7 +166,7 @@ func (p *Parser) parsePath(input string) (string, error) {
 }
 
 // parses a when file loosely based on the http request spec
-func (p *Parser) ParseWhen(r io.ReadCloser, fpath string) (*manifest.When, error) {
+func (p *File) ParseWhen(r io.ReadCloser, fpath string) (*manifest.When, error) {
 	w := &manifest.When{}
 
 	rline, headers, body, err := p.ParseHTTPMessage(r, fpath)
@@ -224,7 +199,7 @@ func (p *Parser) ParseWhen(r io.ReadCloser, fpath string) (*manifest.When, error
 }
 
 // parses a then file loosely based on the format of a standard http message
-func (p *Parser) ParseThen(r io.ReadCloser, fpath string) (*manifest.Then, error) {
+func (p *File) ParseThen(r io.ReadCloser, fpath string) (*manifest.Then, error) {
 	t := &manifest.Then{}
 
 	//parse as a standard http message
@@ -253,7 +228,7 @@ func (p *Parser) ParseThen(r io.ReadCloser, fpath string) (*manifest.Then, error
 }
 
 // parses a 'while' file
-func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]manifest.While, error) {
+func (p *File) ParseWhile(r io.ReadCloser, fpath string) ([]manifest.While, error) {
 	ws := []manifest.While{}
 
 	s := bufio.NewScanner(r)
@@ -288,7 +263,7 @@ func (p *Parser) ParseWhile(r io.ReadCloser, fpath string) ([]manifest.While, er
 }
 
 // parses a 'given' file
-func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (map[string]manifest.Given, error) {
+func (p *File) ParseGiven(r io.ReadCloser, fpath string) (map[string]manifest.Given, error) {
 	gs := make(map[string]manifest.Given)
 
 	s := bufio.NewScanner(r)
@@ -327,7 +302,7 @@ func (p *Parser) ParseGiven(r io.ReadCloser, fpath string) (map[string]manifest.
 }
 
 // Returns wether a given basename of a file path denotes a resource
-func (p *Parser) ToResourcePatternPart(basename string) string {
+func (p *File) ToResourcePatternPart(basename string) string {
 	m := ResourceEX.FindStringSubmatch(basename)
 	if m == nil {
 		return ""
@@ -343,7 +318,7 @@ func (p *Parser) ToResourcePatternPart(basename string) string {
 }
 
 // Returns wether a given basename of a file path denotes a case example
-func (p *Parser) ToCaseName(basename string) string {
+func (p *File) ToCaseName(basename string) string {
 	m := CaseEX.FindStringSubmatch(basename)
 	if m == nil {
 		return ""
@@ -352,7 +327,7 @@ func (p *Parser) ToCaseName(basename string) string {
 	return m[1]
 }
 
-func (p *Parser) enterResource(rel, fpath, part string) error {
+func (p *File) enterResource(rel, fpath, part string) error {
 	var parent *Node
 	var ok bool
 
@@ -379,7 +354,7 @@ func (p *Parser) enterResource(rel, fpath, part string) error {
 	return nil
 }
 
-func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
+func (p *File) visit(fpath string, fi os.FileInfo, err error) error {
 
 	//cancel walk if something went wrong
 	if err != nil {
@@ -504,7 +479,7 @@ func (p *Parser) visit(fpath string, fi os.FileInfo, err error) error {
 	return nil
 }
 
-func (p *Parser) Parse() (*manifest.ManifestData, error) {
+func (p *File) Parse() (*manifest.ManifestData, error) {
 
 	//reset parser afterwards
 	defer p.reset()

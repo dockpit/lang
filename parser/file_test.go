@@ -1,4 +1,4 @@
-package lang_test
+package parser_test
 
 import (
 	"path/filepath"
@@ -6,11 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/dockpit/lang"
+	"github.com/dockpit/lang/parser"
 )
 
 func TestParseNotes(t *testing.T) {
-	p := lang.NewParser(filepath.Join(".example", "note_service"))
+	p := parser.NewFile(filepath.Join(".example_files", "note_service"))
 
 	md, err := p.Parse()
 	if err != nil {
