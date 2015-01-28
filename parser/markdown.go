@@ -38,8 +38,10 @@ type withJSON struct {
 	openResource *manifest.ResourceData
 	openCase     *manifest.CaseData
 
-	recorder      *bytes.Buffer
-	lastParagraph []byte
+	recorder             *bytes.Buffer
+	lastParagraph        []byte
+	lastTextBeforeMarker int
+	lastTextAfterMarker  int
 }
 
 func renderer(md *manifest.ManifestData) *withJSON {
@@ -269,6 +271,16 @@ func (r *withJSON) Paragraph(out *bytes.Buffer, text func() bool) {
 	r.lastParagraph = r.rewind()
 }
 
+func (w *withJSON) AugmentGivenWithLinks(html []byte) []byte {
+	str := string(html)
+
+	//match a dependency given line that may include html
+	rp := regexp.MustCompile(`([a-zA-Z_-]+)(\s+responds:\s+'[\S]*')`)
+
+	//and wrap it in a link
+	return []byte(rp.ReplaceAllString(str, `<a href="{{ .CurrentService }}">$1</a>$2`))
+}
+
 func (r *withJSON) BlockQuote(out *bytes.Buffer, text []byte) {
 	var err error
 
@@ -277,7 +289,7 @@ func (r *withJSON) BlockQuote(out *bytes.Buffer, text []byte) {
 	if c != nil {
 
 		// first bquote
-		if len(c.Given) == 0 {
+		if len(c.Given) == 0 && len(c.While) == 0 {
 
 			//get plain text given from last paragraph
 			c.Given, c.While, err = r.ParseGiven(r.lastParagraph)
@@ -285,6 +297,7 @@ func (r *withJSON) BlockQuote(out *bytes.Buffer, text []byte) {
 				r.Errors <- err
 			}
 
+			text = r.AugmentGivenWithLinks(text)
 		}
 	}
 
@@ -315,6 +328,17 @@ func (r *withJSON) IsWhen(str string) bool {
 
 func (r *withJSON) IsThen(str string) bool {
 	return ThenExp.MatchString(str)
+}
+
+func (r *withJSON) injectA(out *bytes.Buffer, text string) {
+	insertBufferAt(out, r.lastTextAfterMarker, []byte(text))
+}
+
+func insertBufferAt(out *bytes.Buffer, at int, in []byte) {
+	appendix := string(out.Bytes()[at:])
+	out.Truncate(at)
+	out.Write(in)
+	out.Write([]byte(appendix))
 }
 
 func (r *withJSON) Header(out *bytes.Buffer, text func() bool, level int, id string) {
@@ -371,6 +395,8 @@ func (r *withJSON) Header(out *bytes.Buffer, text func() bool, level int, id str
 						Then: manifest.Then{},
 					}
 
+					r.injectA(out, fmt.Sprintf(`&nbsp<a href="">test</a>`))
+
 					r.openResource.Cases = append(r.openResource.Cases, r.openCase)
 				}
 			}
@@ -416,28 +442,42 @@ func (r *withJSON) NormalText(out *bytes.Buffer, text []byte) {
 		r.recorder.Write(text)
 	}
 
+	r.lastTextBeforeMarker = out.Len()
 	r.Renderer.NormalText(out, text)
-
+	r.lastTextAfterMarker = out.Len()
 }
 
 // A parser implementation that takes
 // markdown files and returns manifest data
 type Markdown struct {
-	Dir string
+	Dir   string
+	Pages map[string][]byte
 
 	data *manifest.ManifestData
 }
 
 func NewMarkdown(dir string) *Markdown {
-	p := &Markdown{Dir: dir}
+	p := &Markdown{Dir: dir, Pages: make(map[string][]byte)}
 
 	p.reset()
 	return p
 }
 
 func (p *Markdown) visit(fpath string, fi os.FileInfo, err error) error {
-	renderer := renderer(p.data)
 
+	//cancel walk if something went wrong
+	if err != nil {
+		return err
+	}
+
+	//care only about relastive path
+	rel, err := filepath.Rel(p.Dir, fpath)
+	if err != nil {
+		return err
+	}
+
+	//create rendere nad handle errors
+	renderer := renderer(p.data)
 	go func() {
 		for err := range renderer.Errors {
 			fmt.Println("ERROR", err)
@@ -452,8 +492,8 @@ func (p *Markdown) visit(fpath string, fi os.FileInfo, err error) error {
 				return err
 			}
 
-			//discard html
-			_ = blackfriday.Markdown(md, renderer, 0)
+			//store html for page
+			p.Pages[rel] = blackfriday.Markdown(md, renderer, 0)
 		}
 	}
 
