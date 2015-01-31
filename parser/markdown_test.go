@@ -18,7 +18,7 @@ func TestParse(t *testing.T) {
 	}
 
 	//assert collection lengths
-	assert.Len(t, md.Resources, 1)
+	assert.Len(t, md.Resources, 2)
 	assert.Len(t, md.Resources[0].Cases, 2)
 	assert.Len(t, md.Resources[0].Cases[0].Given, 2)
 	assert.Len(t, md.Resources[0].Cases[0].While, 1)

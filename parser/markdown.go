@@ -282,6 +282,11 @@ func (w *withJSON) AugmentGivenWithLinks(html []byte) []byte {
 	//parse cases and turn them into links as well
 	caseL := []string{}
 	m := rp.FindStringSubmatch(str)
+	if len(m) < 3 {
+		//not a line suitable for augmeting, just return as is
+		return html
+	}
+
 	for _, part := range strings.Split(m[3], ",") {
 		cname := w.ToCaseName(strings.TrimSpace(part))
 		if cname != "" {

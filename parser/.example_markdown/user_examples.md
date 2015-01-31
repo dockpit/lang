@@ -41,3 +41,19 @@
 	200 OK
 
 	{"id": "21", "username": "coolgirl21"}
+
+# /v1/ping
+
+## 'simple OK'
+
+> etcd has: 'default'
+
+### when:
+
+	GET /v1/ping
+
+### then:
+
+	200 OK
+
+	"OK"
