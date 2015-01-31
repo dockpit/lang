@@ -5,7 +5,7 @@
 	
 > mongo has: 'a single user'
 > redis has: ['no cached users'](http://github.com/dockpit/pit-token)
-> pit-token responds: 'authorized'
+> pit-token responds: 'authorized', 'unauthorized','authorized'
 
 ### when:
 

@@ -271,14 +271,29 @@ func (r *withJSON) Paragraph(out *bytes.Buffer, text func() bool) {
 	r.lastParagraph = r.rewind()
 }
 
+// @todo write unit test for this
+// @todo check if can be done more elegant
 func (w *withJSON) AugmentGivenWithLinks(html []byte) []byte {
 	str := string(html)
 
 	//match a dependency given line that may include html
-	rp := regexp.MustCompile(`([a-zA-Z_-]+)(\s+responds:\s+'[\S]*')`)
+	rp := regexp.MustCompile(`([\S]+)(\s+responds:\s+)('.*')`)
+
+	//parse cases and turn them into links as well
+	caseL := []string{}
+	m := rp.FindStringSubmatch(str)
+	for _, part := range strings.Split(m[3], ",") {
+		cname := w.ToCaseName(strings.TrimSpace(part))
+		if cname != "" {
+			caseL = append(caseL, fmt.Sprintf(`<a href="{{ .Link "%s" "%s" }}">'%s'</a>`, m[1], cname, cname))
+		} else {
+			caseL = append(caseL, part)
+		}
+	}
 
 	//and wrap it in a link
-	return []byte(rp.ReplaceAllString(str, `<a href="{{ .CurrentService }}">$1</a>$2`))
+	depL := rp.ReplaceAllString(str, `<a href="{{ .LinkDep "$1" }}">$1</a>$2 _CASELINKS_`)
+	return []byte(strings.Replace(depL, "_CASELINKS_", strings.Join(caseL, ", "), 1))
 }
 
 func (r *withJSON) BlockQuote(out *bytes.Buffer, text []byte) {
@@ -450,14 +465,19 @@ func (r *withJSON) NormalText(out *bytes.Buffer, text []byte) {
 // A parser implementation that takes
 // markdown files and returns manifest data
 type Markdown struct {
-	Dir   string
-	Pages map[string][]byte
+	Dir        string
+	Pages      map[string][]byte
+	CaseToPage map[string]string
 
 	data *manifest.ManifestData
 }
 
 func NewMarkdown(dir string) *Markdown {
-	p := &Markdown{Dir: dir, Pages: make(map[string][]byte)}
+	p := &Markdown{
+		Dir:        dir,
+		Pages:      make(map[string][]byte),
+		CaseToPage: make(map[string]string),
+	}
 
 	p.reset()
 	return p
@@ -494,6 +514,18 @@ func (p *Markdown) visit(fpath string, fi os.FileInfo, err error) error {
 
 			//store html for page
 			p.Pages[rel] = blackfriday.Markdown(md, renderer, 0)
+
+			//map parsed data to markdown files
+			for _, res := range p.data.Resources {
+				for _, c := range res.Cases {
+					if _, ok := p.CaseToPage[c.Name]; ok {
+						continue
+					}
+
+					p.CaseToPage[c.Name] = rel
+				}
+			}
+
 		}
 	}
 
